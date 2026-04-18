@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>礼物监控展示页</title>
+  <style>
+    :root {
+      --bg-panel: rgba(10, 14, 22, 0.78);
+      --bg-card: linear-gradient(135deg, rgba(255, 111, 145, 0.22), rgba(255, 184, 77, 0.2));
+      --border-card: rgba(255, 182, 193, 0.5);
+      --accent: #ff8fb1;
+      --accent-strong: #ffc857;
+      --text-main: #fff7fb;
+      --text-muted: rgba(255, 247, 251, 0.72);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top right, rgba(255, 143, 177, 0.2), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(255, 200, 87, 0.14), transparent 30%),
+        transparent;
+      color: var(--text-main);
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+    }
+
+    .panel {
+      width: min(360px, 100%);
+      height: min(560px, calc(100vh - 48px));
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+
+    .list::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    .empty {
+      padding: 16px;
+      border: 1px dashed rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .card {
+      padding: 12px 14px;
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      background: var(--bg-card);
+      animation: card-in 220ms ease-out forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+      transform: translateX(-100%);
+      animation: shine 1.8s ease-out 1;
+    }
+
+    .name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .meta,
+    .time {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .gift {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--accent-strong);
+    }
+
+    @keyframes card-in {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes shine {
+      from {
+        transform: translateX(-100%);
+      }
+
+      to {
+        transform: translateX(100%);
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel">
+    <div class="header">
+      <h1 class="title">礼物监控</h1>
+      <div class="status" id="status">正在连接...</div>
+    </div>
+    <div class="list" id="list">
+      <div class="empty" id="empty">还没有收到礼物事件</div>
+    </div>
+  </section>
+
+  <script>
+    const list = document.getElementById("list");
+    const empty = document.getElementById("empty");
+    const status = document.getElementById("status");
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${protocol}://${window.location.host}`);
+    const maxCards = 50;
+
+    const updateStatus = (text, color) => {
+      status.textContent = text;
+      status.style.color = color;
+    };
+
+    const formatTime = (isoString) => {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) {
+        return "--:--:--";
+      }
+
+      return date.toLocaleTimeString("zh-CN", { hour12: false });
+    };
+
+    const trimCards = () => {
+      while (list.querySelectorAll(".card").length > maxCards) {
+        list.querySelector(".card")?.remove();
+      }
+    };
+
+    ws.addEventListener("open", () => {
+      updateStatus("已连接", "#75f3b6");
+    });
+
+    ws.addEventListener("close", () => {
+      updateStatus("连接已断开", "#ffb86c");
+    });
+
+    ws.addEventListener("error", () => {
+      updateStatus("连接失败", "#ff8f8f");
+    });
+
+    ws.addEventListener("message", (event) => {
+      let data;
+
+      try {
+        data = JSON.parse(event.data);
+      } catch (error) {
+        return;
+      }
+
+      if (data.type !== "gift") {
+        return;
+      }
+
+      empty.remove();
+
+      const card = document.createElement("article");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="name">${data.uname}</div>
+        <div class="meta">UID: ${data.uid || "未知"}</div>
+        <div class="gift">送出了【${data.giftName}】</div>
+        <div class="time">${formatTime(data.capturedAt)}</div>
+      `;
+
+      list.appendChild(card);
+      trimCards();
+      list.scrollTop = list.scrollHeight;
+    });
+  </script>
+</body>
+</html>

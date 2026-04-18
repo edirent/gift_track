@@ -1,0 +1,20 @@
+{
+  "name": "gift_track",
+  "version": "1.0.0",
+  "description": "Track Bilibili live gifts locally with Puppeteer and WebSocket.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "bilibili",
+    "puppeteer",
+    "websocket",
+    "obs"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^24.7.1",
+    "ws": "^8.18.3"
+  }
+}
