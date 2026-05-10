@@ -69,9 +69,42 @@
 
 自动私信程序会监听 `server.js` 广播出来的礼物事件，把每次抓到的 UID 写到 `data/captured_uids.jsonl`，成功发送过的 UID 写到 `data/sent_uids.json`。默认同一个 UID 只发送一次。
 
+按指定礼物和单次礼物数量发送：
+
+```bash
+npm run auto-send -- --gift-target 人气票 --gift-count 3 --message "感谢 {{uname}} 送出的 {{giftCount}} 个 {{giftName}}！"
+```
+
+如果要按用户累计数量判断：
+
+```bash
+npm run auto-send -- --gift-target 人气票 --gift-count 10 --count-mode total
+```
+
+如果要让自动私信程序自己判断多个礼物规则，启动抓取服务时先抓所有礼物：
+
+```bash
+TARGET_GIFT="*" npm start
+```
+
+自定义多规则示例：
+
+```bash
+GIFT_RULES='[
+  {"giftName":"人气票","minCount":3,"message":"感谢 {{uname}} 的 {{giftCount}} 张人气票！"},
+  {"giftName":"小花花","minCount":1,"mode":"total","message":"谢谢 {{uname}} 累计送出 {{totalCount}} 个 {{giftName}}！"}
+]' npm run auto-send
+```
+
+`GIFT_RULES` 也可以填写 JSON 文件路径，例如 `GIFT_RULES=./gift-rules.json npm run auto-send`。
+
 可用环境变量：
 
 - `BILI_MESSAGE`：私信内容，默认 `感谢你的礼物！`
+- `SEND_GIFT_TARGET` / `GIFT_TARGET`：要触发私信的礼物名，省略或设为 `*` 表示任意礼物
+- `MIN_GIFT_COUNT` / `GIFT_COUNT`：触发私信的最小礼物数量，默认 `1`
+- `COUNT_MODE`：数量判断方式，`event` 表示单次礼物，`total` 表示按用户累计，默认 `event`
+- `GIFT_RULES`：自定义规则 JSON 或 JSON 文件路径
 - `SEND_ONCE`：是否同 UID 只发一次，默认 `true`
 - `DRY_RUN`：只记录不发送，默认 `false`
 - `GIFT_WS_URL`：WebSocket 地址，默认读取 `PORT` 并连接 `ws://127.0.0.1:8080`
@@ -97,6 +130,8 @@ npm start
 ```
 
 `HEADLESS` 支持 `false`、`true` 和 `new`。
+
+`TARGET_GIFT` 默认只抓 `人气票`，设为 `*` 时会抓所有礼物，再交给自动私信规则判断。
 
 ## 本机浏览器路径示例
 

@@ -9,6 +9,8 @@ const puppeteer = require("puppeteer");
 const PORT = Number.parseInt(process.env.PORT || "8080", 10);
 const ROOM_URL = process.env.ROOM_URL || "https://live.bilibili.com/5440";
 const TARGET_GIFT = process.env.TARGET_GIFT || "人气票";
+const shouldCaptureGift = (giftName, targetGift) =>
+  Boolean(giftName) && (!targetGift || targetGift === "*" || giftName === targetGift);
 const parseHeadlessMode = (value) => {
   const normalized = (value || "false").trim().toLowerCase();
 
@@ -85,8 +87,12 @@ wss.on("connection", (ws) => {
       return;
     }
 
+    if (!shouldCaptureGift(payload.giftName, TARGET_GIFT)) {
+      return;
+    }
+
     console.log(
-      `🎁 [抓取成功] 用户: ${payload.uname} (UID: ${payload.uid}) 送出了【${payload.giftName}】`,
+      `🎁 [抓取成功] 用户: ${payload.uname} (UID: ${payload.uid}) 送出了【${payload.giftName}】x${payload.giftCount || 1}`,
     );
 
     const message = JSON.stringify(payload);
@@ -113,6 +119,7 @@ const injectGiftTracker = async (page) => {
       const LIST_SELECTOR = ".chat-history-list";
       const ITEM_SELECTOR = ".gift-item";
       const GIFT_NAME_SELECTOR = ".gift-name";
+      const GIFT_COUNT_SELECTORS = [".gift-count", ".gift-num", ".gift-amount", ".gift-number", ".count", ".num"];
 
       if (window.__biliGiftPuppeteer?.stop) {
         window.__biliGiftPuppeteer.stop();
@@ -135,9 +142,39 @@ const injectGiftTracker = async (page) => {
         return giftNodes;
       };
 
+      const parsePositiveInt = (value) => {
+        const parsed = Number.parseInt(String(value || "").replace(/[^\d]/g, ""), 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      };
+
+      const getGiftCount = (giftNode) => {
+        const attrCount = [
+          "data-count",
+          "data-num",
+          "data-gift-count",
+          "data-gift-num",
+        ]
+          .map((attrName) => parsePositiveInt(giftNode.getAttribute(attrName)))
+          .find((value) => value !== null);
+
+        if (attrCount !== undefined) {
+          return attrCount;
+        }
+
+        for (const selector of GIFT_COUNT_SELECTORS) {
+          const count = parsePositiveInt(giftNode.querySelector(selector)?.textContent);
+          if (count !== null) {
+            return count;
+          }
+        }
+
+        const textCount = giftNode.textContent?.match(/[xX×*]\s*(\d+)/)?.[1];
+        return parsePositiveInt(textCount) || 1;
+      };
+
       const buildPayload = (giftNode) => {
         const giftName = giftNode.querySelector(GIFT_NAME_SELECTOR)?.textContent?.trim();
-        if (giftName !== targetGift) {
+        if (!giftName || !(targetGift === "*" || giftName === targetGift)) {
           return null;
         }
 
@@ -146,6 +183,7 @@ const injectGiftTracker = async (page) => {
           uid: giftNode.getAttribute("data-uid"),
           uname: giftNode.getAttribute("data-uname")?.trim() || "未知用户",
           giftName,
+          giftCount: getGiftCount(giftNode),
           capturedAt: new Date().toISOString(),
         };
       };
