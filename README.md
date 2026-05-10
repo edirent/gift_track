@@ -10,6 +10,7 @@
 
    ```bash
    npm install
+   pip install -r requirements.txt
    ```
 
 2. 按需修改 [server.js](/home/edirent/gift_track/server.js:10) 顶部配置，或者用环境变量覆盖：
@@ -37,16 +38,52 @@
    - 终端会打印用户昵称、UID 和礼物名
    - 本地展示页会追加一条礼物卡片
 
+6. 如果要把抓到的 UID 自动私信，另开一个终端运行：
+
+   ```bash
+   npm run auto-send
+   ```
+
+   首次建议先用测试模式确认 UID 记录链路：
+
+   ```bash
+   DRY_RUN=true npm run auto-send
+   ```
+
 ## 文件
 
 - [server.js](/home/edirent/gift_track/server.js:1)
   启动本地 HTTP/WebSocket 服务，并自动控制浏览器打开直播间和注入抓取逻辑。
 - [display.html](/home/edirent/gift_track/display.html:1)
   本地展示页，可直接用于浏览器或 OBS 浏览器源。
+- [auto-send-gift-users.js](/home/edirent/gift_track/auto-send-gift-users.js:1)
+  连接本地 WebSocket，记录 `server.js` 抓到的 UID，并调用 `bili_test.py` 给对应用户发私信。
+- [bili_test.py](/home/edirent/gift_track/bili_test.py:1)
+  B 站私信发送脚本，可单独指定 UID 发送，也会被自动私信程序调用。
 - [scripts/bili-gift-capture.js](/home/edirent/gift_track/scripts/bili-gift-capture.js:1)
   之前保留的纯前端抓取脚本，作为备用方案存在。
 - [scripts/bili-gift-display.js](/home/edirent/gift_track/scripts/bili-gift-display.js:1)
   之前保留的纯前端接收端示例。
+
+## 自动私信
+
+自动私信程序会监听 `server.js` 广播出来的礼物事件，把每次抓到的 UID 写到 `data/captured_uids.jsonl`，成功发送过的 UID 写到 `data/sent_uids.json`。默认同一个 UID 只发送一次。
+
+可用环境变量：
+
+- `BILI_MESSAGE`：私信内容，默认 `感谢你的礼物！`
+- `SEND_ONCE`：是否同 UID 只发一次，默认 `true`
+- `DRY_RUN`：只记录不发送，默认 `false`
+- `GIFT_WS_URL`：WebSocket 地址，默认读取 `PORT` 并连接 `ws://127.0.0.1:8080`
+- `UID_LOG_FILE`：UID 抓取记录文件，默认 `data/captured_uids.jsonl`
+- `SENT_UID_FILE`：已成功发送 UID 文件，默认 `data/sent_uids.json`
+- `PYTHON`：调用 Python 的命令，Linux 默认 `python3`，Windows 默认 `python`
+
+也可以直接用 `bili_test.py` 给指定 UID 发一条：
+
+```bash
+python3 bili_test.py 123456 -m "感谢你的礼物！"
+```
 
 ## 环境变量示例
 

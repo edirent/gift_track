@@ -4,7 +4,8 @@
   "description": "Track Bilibili live gifts locally with Puppeteer and WebSocket.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "auto-send": "node auto-send-gift-users.js"
   },
   "keywords": [
     "bilibili",
