@@ -287,7 +287,10 @@ const runBiliTest = (uid, message) => {
   return new Promise((resolve, reject) => {
     const child = spawn(PYTHON, args, {
       cwd: __dirname,
-      env: process.env,
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: process.env.PYTHONIOENCODING || "utf-8",
+      },
       windowsHide: true,
     });
 

@@ -8,6 +8,11 @@ import sys
 import os
 import argparse
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 # ================= 1. 核心凭证与参数 =================
 SESSDATA = os.getenv("BILI_SESSDATA", "edee9281%2C1793724896%2C22577%2A52CjDCXJZhyiLoVvMZ8YQq0wg2GaSrBH2tWgT3EpQEfU-cqt53dxsxsWflrlgNHtF6AaESVkp0T2RsWTRpZUVDcUktSk5UOThkTzRPS1dhWlVYMlRKRU5QYTByZzN4SS1RQ3VmOGxhejFfdDA5a1RRdG00VDhHWERWWllGSTFRSktRek12dmtNWlNRIIEC")
 BILI_JCT = os.getenv("BILI_JCT", "6c7aa83ceaaebf8045934cc9df18c871")
@@ -89,7 +94,7 @@ async def send_message(receiver_uid: int, content: str = DEFAULT_MESSAGE) -> dic
             "msg[receiver_type]": 1,      # 单聊
             "msg[msg_type]": 1,           # 文本类型
             "msg[msg_status]": 0,
-            "msg[content]": json.dumps(msg_content, ensure_ascii=False), # 内容必须是 JSON 字符串
+            "msg[content]": json.dumps(msg_content, ensure_ascii=True), # 内容必须是 JSON 字符串
             "msg[timestamp]": int(time.time()),
             "msg[new_face_version]": 0,
             "msg[dev_id]": DEV_ID,
@@ -120,13 +125,13 @@ async def main():
         result = await send_message(args.receiver_uid, args.message)
     except Exception as error:
         if args.json:
-            print(json.dumps({"code": -1, "message": str(error)}, ensure_ascii=False))
+            print(json.dumps({"code": -1, "message": str(error)}, ensure_ascii=True))
         else:
             print(f"❌ 发送失败: {error}")
         return 1
 
     if args.json:
-        print(json.dumps(result, ensure_ascii=False))
+        print(json.dumps(result, ensure_ascii=True))
     else:
         print("\n🎉 发送结果:")
         print(result)
