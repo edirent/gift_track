@@ -69,16 +69,18 @@
 
 自动私信程序会监听 `server.js` 广播出来的礼物事件，把每次抓到的 UID 写到 `data/captured_uids.jsonl`，成功发送过的 UID 写到 `data/sent_uids.json`。默认同一个 UID 只发送一次。
 
-按指定礼物和单次礼物数量发送：
+按指定礼物和累计票数发送：
 
 ```bash
-npm run auto-send -- --gift-target 人气票 --gift-count 3 --message "感谢 {{uname}} 送出的 {{giftCount}} 个 {{giftName}}！"
+npm run auto-send -- --gift-target 人气票 --vote-count 100 --message "感谢 {{uname}} 累计送出 {{totalCount}} 张 {{giftName}}！"
 ```
 
-如果要按用户累计数量判断：
+`--vote-count` 是自定义触发阈值，默认按同一个 UID 的累计票数判断。连击从 `x1` 变到 `x10` 时只会给累计数新增 `9`，不会重复把前面的票数再加一次。
+
+如果只想按单次连击数量判断：
 
 ```bash
-npm run auto-send -- --gift-target 人气票 --gift-count 10 --count-mode total
+npm run auto-send -- --gift-target 人气票 --gift-count 10 --count-mode event
 ```
 
 如果要让自动私信程序自己判断多个礼物规则，启动抓取服务时先抓所有礼物：
@@ -91,7 +93,7 @@ TARGET_GIFT="*" npm start
 
 ```bash
 GIFT_RULES='[
-  {"giftName":"人气票","minCount":3,"message":"感谢 {{uname}} 的 {{giftCount}} 张人气票！"},
+  {"giftName":"人气票","minCount":100,"mode":"total","message":"感谢 {{uname}} 累计送出 {{totalCount}} 张人气票！"},
   {"giftName":"小花花","minCount":1,"mode":"total","message":"谢谢 {{uname}} 累计送出 {{totalCount}} 个 {{giftName}}！"}
 ]' npm run auto-send
 ```
@@ -102,8 +104,8 @@ GIFT_RULES='[
 
 - `BILI_MESSAGE`：私信内容，默认 `感谢你的礼物！`
 - `SEND_GIFT_TARGET` / `GIFT_TARGET`：要触发私信的礼物名，省略或设为 `*` 表示任意礼物
-- `MIN_GIFT_COUNT` / `GIFT_COUNT`：触发私信的最小礼物数量，默认 `1`
-- `COUNT_MODE`：数量判断方式，`event` 表示单次礼物，`total` 表示按用户累计，默认 `event`
+- `VOTE_COUNT` / `TOTAL_GIFT_COUNT` / `MIN_GIFT_COUNT` / `GIFT_COUNT`：触发私信的目标票数，默认 `1`
+- `COUNT_MODE`：数量判断方式，`total` 表示按用户累计，`event` 表示按单次连击，默认 `total`
 - `GIFT_RULES`：自定义规则 JSON 或 JSON 文件路径
 - `SEND_ONCE`：是否同 UID 只发一次，默认 `true`
 - `DRY_RUN`：只记录不发送，默认 `false`

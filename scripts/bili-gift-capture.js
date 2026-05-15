@@ -5,13 +5,14 @@
   const ITEM_SELECTOR = ".gift-item";
   const GIFT_NAME_SELECTOR = ".gift-name";
   const GIFT_COUNT_SELECTORS = [".gift-count", ".gift-num", ".gift-amount", ".gift-number", ".count", ".num"];
+  const UID_ATTRIBUTES = ["data-uid", "data-userid", "data-user-id", "data-mid"];
 
   if (window.__biliGiftCapture?.stop) {
     window.__biliGiftCapture.stop();
   }
 
   const channel = new BroadcastChannel(CHANNEL_NAME);
-  const processedNodes = new WeakSet();
+  const giftNodeCounts = new WeakMap();
 
   const parsePositiveInt = (value) => {
     const parsed = Number.parseInt(String(value || "").replace(/[^\d]/g, ""), 10);
@@ -43,7 +44,18 @@
     return parsePositiveInt(textCount) || 1;
   };
 
-  const buildPayload = (giftNode) => {
+  const getFirstAttribute = (node, attrNames) => {
+    for (const attrName of attrNames) {
+      const value = node.getAttribute(attrName);
+      if (value) {
+        return value;
+      }
+    }
+
+    return null;
+  };
+
+  const buildPayload = (giftNode, giftCount, giftDelta) => {
     const giftName = giftNode.querySelector(GIFT_NAME_SELECTOR)?.textContent?.trim();
 
     if (giftName !== TARGET_GIFT) {
@@ -51,28 +63,44 @@
     }
 
     return {
-      uid: giftNode.getAttribute("data-uid"),
+      uid: getFirstAttribute(giftNode, UID_ATTRIBUTES),
       uname: giftNode.getAttribute("data-uname")?.trim() || "未知用户",
       giftName,
-      giftCount: getGiftCount(giftNode),
+      giftCount,
+      giftDelta,
+      comboCount: giftCount,
       capturedAt: new Date().toISOString(),
     };
   };
 
   const handleGiftNode = (giftNode) => {
-    if (processedNodes.has(giftNode)) {
+    const giftCount = getGiftCount(giftNode);
+    const giftKey = [
+      getFirstAttribute(giftNode, UID_ATTRIBUTES) || "",
+      giftNode.getAttribute("data-uname")?.trim() || "",
+      giftNode.querySelector(GIFT_NAME_SELECTOR)?.textContent?.trim() || "",
+    ].join(":");
+    const previousState = giftNodeCounts.get(giftNode);
+    const previousCount = previousState?.key === giftKey ? previousState.count : 0;
+
+    if (giftCount === previousCount) {
       return;
     }
 
-    processedNodes.add(giftNode);
-
-    const payload = buildPayload(giftNode);
+    const giftDelta = giftCount > previousCount ? giftCount - previousCount : giftCount;
+    const payload = buildPayload(giftNode, giftCount, giftDelta);
     if (!payload) {
       return;
     }
 
-    console.log(`[抓取端] 抓取到: ${payload.uname} -> ${payload.giftName}`);
+    giftNodeCounts.set(giftNode, { key: giftKey, count: giftCount });
+    console.log(`[抓取端] 抓取到: ${payload.uname} -> ${payload.giftName} x${payload.giftCount}`);
     channel.postMessage(payload);
+  };
+
+  const getGiftNode = (node) => {
+    const element = node instanceof Element ? node : node?.parentElement;
+    return element?.closest?.(ITEM_SELECTOR) || null;
   };
 
   const collectGiftNodes = (node) => {
@@ -91,21 +119,38 @@
   };
 
   const observer = new MutationObserver((mutationsList) => {
+    const pendingGiftNodes = new Set();
+
     for (const mutation of mutationsList) {
-      if (mutation.type !== "childList" || mutation.addedNodes.length === 0) {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          collectGiftNodes(node).forEach((giftNode) => pendingGiftNodes.add(giftNode));
+        });
+
+        const giftNode = getGiftNode(mutation.target);
+        if (giftNode) {
+          pendingGiftNodes.add(giftNode);
+        }
         continue;
       }
 
-      mutation.addedNodes.forEach((node) => {
-        collectGiftNodes(node).forEach(handleGiftNode);
-      });
+      if (mutation.type === "characterData" || mutation.type === "attributes") {
+        const giftNode = getGiftNode(mutation.target);
+        if (giftNode) {
+          pendingGiftNodes.add(giftNode);
+        }
+      }
     }
+
+    pendingGiftNodes.forEach(handleGiftNode);
   });
 
   const start = () => {
     const targetNode = document.querySelector(LIST_SELECTOR) || document.body;
 
     observer.observe(targetNode, {
+      attributes: true,
+      characterData: true,
       childList: true,
       subtree: true,
     });

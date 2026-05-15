@@ -42,14 +42,15 @@ const parseCliArgs = (argv) => {
 
 const printUsage = () => {
   console.log(`Usage:
-  npm run auto-send -- --gift-target 人气票 --gift-count 3
+  npm run auto-send -- --gift-target 人气票 --vote-count 100
   npm run auto-send -- --rules ./gift-rules.json
 
 Options:
   --gift-target <name>   要触发私信的礼物名，省略或设为 * 表示任意礼物
-  --gift-count <number>  触发私信的最小礼物数量，默认 1
-  --count-mode <mode>    event 按单次礼物判断，total 按用户累计判断，默认 event
-  --message <text>       私信内容，支持 {{uname}}、{{giftName}}、{{giftCount}} 等模板变量
+  --vote-count <number>  触发私信的目标累计票数，等同于 --gift-count，默认 1
+  --gift-count <number>  触发私信的目标票数，默认 1
+  --count-mode <mode>    total 按用户累计判断，event 按单次连击判断，默认 total
+  --message <text>       私信内容，支持 {{uname}}、{{giftName}}、{{totalCount}}、{{giftCount}} 等模板变量
   --rules <json|file>    自定义规则 JSON 或 JSON 文件路径
   --dry-run              只记录不发送
   --no-send-once         允许同一个 UID 多次发送`);
@@ -66,6 +67,11 @@ const pickOption = (...values) => values.find((value) => value !== undefined && 
 
 const parsePositiveInt = (value, fallback) => {
   const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const parsePayloadCount = (value, fallback) => {
+  const parsed = Number.parseInt(String(value ?? "").replace(/[^\d]/g, ""), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
@@ -109,10 +115,18 @@ const DEFAULT_GIFT_TARGET = String(
   pickOption(cli.giftTarget, process.env.SEND_GIFT_TARGET, process.env.GIFT_TARGET) || "",
 ).trim();
 const DEFAULT_MIN_GIFT_COUNT = parsePositiveInt(
-  pickOption(cli.giftCount, process.env.MIN_GIFT_COUNT, process.env.GIFT_COUNT),
+  pickOption(
+    cli.voteCount,
+    cli.totalGiftCount,
+    cli.giftCount,
+    process.env.VOTE_COUNT,
+    process.env.TOTAL_GIFT_COUNT,
+    process.env.MIN_GIFT_COUNT,
+    process.env.GIFT_COUNT,
+  ),
   1,
 );
-const DEFAULT_COUNT_MODE = normalizeCountMode(pickOption(cli.countMode, process.env.COUNT_MODE));
+const DEFAULT_COUNT_MODE = normalizeCountMode(pickOption(cli.countMode, process.env.COUNT_MODE, "total"));
 const RULES_SOURCE = pickOption(cli.rules, process.env.GIFT_RULES, process.env.GIFT_RULES_FILE);
 const SEND_ONCE = parseBoolean(pickOption(cli.sendOnce, process.env.SEND_ONCE), true);
 const DRY_RUN = parseBoolean(pickOption(cli.dryRun, process.env.DRY_RUN), false);
@@ -138,7 +152,16 @@ const normalizeUid = (value) => {
 const normalizeGiftName = (value) => String(value || "").trim();
 
 const getGiftCount = (payload) =>
-  parsePositiveInt(payload.giftCount ?? payload.count ?? payload.num ?? payload.giftNum, 1);
+  parsePayloadCount(payload.comboCount ?? payload.giftCount ?? payload.count ?? payload.num ?? payload.giftNum, 1);
+
+const getGiftDelta = (payload) =>
+  parsePayloadCount(
+    payload.giftDelta ?? payload.deltaCount ?? payload.countDelta ?? payload.delta ?? payload.giftCount,
+    getGiftCount(payload),
+  );
+
+const formatGiftCount = ({ giftCount, giftDelta }) =>
+  giftDelta && giftDelta !== giftCount ? `${giftCount}（新增 ${giftDelta}）` : String(giftCount);
 
 const loadSentUids = async () => {
   try {
@@ -174,6 +197,8 @@ const appendCapturedUid = async (payload, uid) => {
     uname: payload.uname || "未知用户",
     giftName: payload.giftName || "未知礼物",
     giftCount: getGiftCount(payload),
+    giftDelta: getGiftDelta(payload),
+    comboCount: getGiftCount(payload),
     capturedAt: payload.capturedAt || null,
     receivedAt: new Date().toISOString(),
   };
@@ -233,20 +258,20 @@ const getTotalKey = (uid, rule, giftName) => `${uid}:${rule.id}:${giftName}`;
 const findMatchedRule = (payload, uid) => {
   const giftName = normalizeGiftName(payload.giftName);
   const giftCount = getGiftCount(payload);
-  let matchedGiftRule = null;
+  const giftDelta = getGiftDelta(payload);
+  let skippedByCount = null;
 
   for (const rule of giftRules) {
     if (!ruleMatchesGift(rule, giftName)) {
       continue;
     }
 
-    matchedGiftRule = rule;
     let compareCount = giftCount;
-    let totalCount = giftCount;
+    let totalCount = giftDelta;
 
     if (rule.mode === "total") {
       const totalKey = getTotalKey(uid, rule, giftName);
-      totalCount = (giftTotals.get(totalKey) || 0) + giftCount;
+      totalCount = (giftTotals.get(totalKey) || 0) + giftDelta;
       giftTotals.set(totalKey, totalCount);
       compareCount = totalCount;
     }
@@ -256,25 +281,39 @@ const findMatchedRule = (payload, uid) => {
         rule,
         giftName,
         giftCount,
+        giftDelta,
+        comboCount: giftCount,
         totalCount,
         compareCount,
       };
     }
+
+    skippedByCount = {
+      skippedByCount: true,
+      rule,
+      giftName,
+      giftCount,
+      giftDelta,
+      comboCount: giftCount,
+      totalCount,
+      compareCount,
+    };
   }
 
-  return matchedGiftRule
-    ? { skippedByCount: true, rule: matchedGiftRule, giftName, giftCount }
-    : { skippedByGift: true, giftName, giftCount };
+  return skippedByCount || { skippedByGift: true, giftName, giftCount, giftDelta, comboCount: giftCount };
 };
 
 const renderMessage = (template, values) =>
-  template.replace(/\{\{\s*(uid|uname|giftName|giftCount|totalCount|minCount|count)\s*\}\}/g, (_, key) => {
-    if (key === "count") {
-      return String(values.giftCount);
-    }
+  template.replace(
+    /\{\{\s*(uid|uname|giftName|giftCount|giftDelta|comboCount|totalCount|minCount|count)\s*\}\}/g,
+    (_, key) => {
+      if (key === "count") {
+        return String(values.giftCount);
+      }
 
-    return String(values[key] ?? "");
-  });
+      return String(values[key] ?? "");
+    },
+  );
 
 const formatProcessOutput = (stdout, stderr) => {
   const output = [stdout.trim(), stderr.trim()].filter(Boolean).join("\n");
@@ -342,13 +381,17 @@ const sendToGiftUser = async (payload) => {
 
   const matched = findMatchedRule(payload, uid);
   if (matched.skippedByGift) {
-    console.log(`⏭️ [Gift] ${matched.giftName || "未知礼物"}x${matched.giftCount} 未命中礼物规则，只记录不发送`);
+    console.log(
+      `⏭️ [Gift] ${matched.giftName || "未知礼物"}x${formatGiftCount(matched)} 未命中礼物规则，只记录不发送`,
+    );
     return;
   }
 
   if (matched.skippedByCount) {
+    const progressText =
+      matched.rule.mode === "total" ? `，当前累计 ${matched.totalCount}/${matched.rule.minCount}` : "";
     console.log(
-      `⏭️ [Gift] ${matched.giftName || "未知礼物"}x${matched.giftCount} 未达到阈值 ${matched.rule.minCount}，只记录不发送`,
+      `⏭️ [Gift] ${matched.giftName || "未知礼物"}x${formatGiftCount(matched)} 未达到阈值 ${matched.rule.minCount}${progressText}，只记录不发送`,
     );
     return;
   }
@@ -358,6 +401,8 @@ const sendToGiftUser = async (payload) => {
     uname: payload.uname || "未知用户",
     giftName: matched.giftName,
     giftCount: matched.giftCount,
+    giftDelta: matched.giftDelta,
+    comboCount: matched.comboCount,
     totalCount: matched.totalCount,
     minCount: matched.rule.minCount,
   });

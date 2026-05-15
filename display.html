@@ -217,12 +217,16 @@
 
       empty.remove();
 
+      const giftCount = Number.parseInt(data.comboCount || data.giftCount || 1, 10) || 1;
+      const giftDelta = Number.parseInt(data.giftDelta || giftCount, 10) || giftCount;
+      const countText = giftDelta !== giftCount ? `x${giftCount}（新增 ${giftDelta}）` : `x${giftCount}`;
+
       const card = document.createElement("article");
       card.className = "card";
       card.innerHTML = `
         <div class="name">${data.uname}</div>
         <div class="meta">UID: ${data.uid || "未知"}</div>
-        <div class="gift">送出了【${data.giftName}】</div>
+        <div class="gift">送出了【${data.giftName}】${countText}</div>
         <div class="time">${formatTime(data.capturedAt)}</div>
       `;
 
