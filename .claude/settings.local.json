@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check 'C:/Users/ada1c/Downloads/gift_track/gift_track/auto-send-gift-users.js')"
+    ]
+  }
+}

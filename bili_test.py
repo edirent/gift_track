@@ -13,16 +13,14 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-# ================= 1. 核心凭证与参数 =================
-SESSDATA = os.getenv("BILI_SESSDATA", "edee9281%2C1793724896%2C22577%2A52CjDCXJZhyiLoVvMZ8YQq0wg2GaSrBH2tWgT3EpQEfU-cqt53dxsxsWflrlgNHtF6AaESVkp0T2RsWTRpZUVDcUktSk5UOThkTzRPS1dhWlVYMlRKRU5QYTByZzN4SS1RQ3VmOGxhejFfdDA5a1RRdG00VDhHWERWWllGSTFRSktRek12dmtNWlNRIIEC")
-BILI_JCT = os.getenv("BILI_JCT", "6c7aa83ceaaebf8045934cc9df18c871")
+
+SESSDATA = os.getenv("BILI_SESSDATA", "673208d8%2C1793995401%2Cb9b6e%2A52CjD96VBG0zFW2xyo-fDmGyT_DCaTDdCsFMxE8-NyPDNcjZqckv0LtvFZ2LcggMld4u8SVmZVVGlXX2xDS01ONktMaW5xU2hnY0dBdGJvVDMyUmZPZElkaEgwLUpGR0tEdVU3T3I5Y251dDdBYUhycm10Z0treTl6ZlctM3Rvb29Ld2NKUjA2eTFnIIEC")
+BILI_JCT = os.getenv("BILI_JCT", "c4d02395fc38dce0c30affed3ce8f697")
 
 SENDER_UID = int(os.getenv("BILI_SENDER_UID", "2191386"))     # 你的 UID (抓包提供)
 RECEIVER_UID = int(os.getenv("BILI_RECEIVER_UID", "4805538"))  # 默认目标 UID (抓包提供)
 DEV_ID = os.getenv("BILI_DEV_ID", "CBFAC15B-2076-458C-8D07-F7A6B42D6D2F") # 你的设备指纹 (抓包提供)
 DEFAULT_MESSAGE = os.getenv("BILI_MESSAGE", "你好，这是一条脱离客户端发送的自动化测试消息。")
-
-# ================= 2. WBI 签名加密算法 =================
 # B站混淆在前端 JS 里的“魔法表”，用于计算 mixin_key
 mixinKeyEncTab = [
     46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,

@@ -1,0 +1,17 @@
+2026/05/10-15:10:59.552 63b50 Reusing MANIFEST D:\Programs\gift_track\chrome_data\Default\Local Storage\leveldb/MANIFEST-000001
+2026/05/10-15:10:59.565 63b50 Recovering log #64
+2026/05/10-15:10:59.568 63b50 Level-0 table #67: started
+2026/05/10-15:10:59.575 63b50 Level-0 table #67: 162208 bytes OK
+2026/05/10-15:10:59.579 63b50 Delete type=0 #64
+2026/05/10-15:10:59.580 5a654 Compacting 4@0 + 1@1 files
+2026/05/10-15:10:59.604 5a654 Generated table #69@0: 171 keys, 838828 bytes
+2026/05/10-15:10:59.604 5a654 Compacted 4@0 + 1@1 files => 838828 bytes
+2026/05/10-15:10:59.606 5a654 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/05/10-15:10:59.607 5a654 Delete type=2 #59
+2026/05/10-15:10:59.607 5a654 Delete type=2 #61
+2026/05/10-15:10:59.608 5a654 Delete type=2 #63
+2026/05/10-15:10:59.608 5a654 Delete type=2 #65
+2026/05/10-15:10:59.608 5a654 Delete type=2 #67
+2026/05/10-15:11:59.607 5a654 Level-0 table #71: started
+2026/05/10-15:11:59.619 5a654 Level-0 table #71: 601086 bytes OK
+2026/05/10-15:11:59.622 5a654 Delete type=0 #68

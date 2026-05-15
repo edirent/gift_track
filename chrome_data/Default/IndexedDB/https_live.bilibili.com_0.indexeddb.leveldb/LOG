@@ -1,0 +1,12 @@
+2026/05/10-15:13:36.206 4f170 Reusing MANIFEST D:\Programs\gift_track\chrome_data\Default\IndexedDB\https_live.bilibili.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/10-15:13:36.214 4f170 Recovering log #4
+2026/05/10-15:13:36.245 4f170 Reusing old log D:\Programs\gift_track\chrome_data\Default\IndexedDB\https_live.bilibili.com_0.indexeddb.leveldb/000004.log 
+2026/05/10-15:13:45.468 53f08 Level-0 table #8: started
+2026/05/10-15:13:45.483 53f08 Level-0 table #8: 1145619 bytes OK
+2026/05/10-15:13:45.488 53f08 Delete type=0 #4
+2026/05/10-15:13:48.464 4f170 Compacting 1@1 + 1@2 files
+2026/05/10-15:13:48.483 4f170 Generated table #9@1: 2962 keys, 252613 bytes
+2026/05/10-15:13:48.484 4f170 Compacted 1@1 + 1@2 files => 252613 bytes
+2026/05/10-15:13:48.488 4f170 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/10-15:13:48.488 4f170 Delete type=2 #5
+2026/05/10-15:13:48.488 4f170 Delete type=2 #8

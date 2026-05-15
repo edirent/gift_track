@@ -20,6 +20,7 @@ const parseHeadlessMode = (value) => {
 
   return /^(1|true|yes)$/i.test(normalized);
 };
+const BROWSER_USER_DATA_DIR = process.env.BROWSER_USER_DATA_DIR || null;
 
 const HEADLESS = parseHeadlessMode(process.env.HEADLESS);
 const BROWSER_EXECUTABLE_PATH = process.env.BROWSER_EXECUTABLE_PATH || null;
@@ -261,7 +262,9 @@ const launchBrowser = async () => {
     headless: HEADLESS,
     defaultViewport: null,
     executablePath: BROWSER_EXECUTABLE_PATH,
+    userDataDir: BROWSER_USER_DATA_DIR,
   });
+
 
   const page = await browser.newPage();
 

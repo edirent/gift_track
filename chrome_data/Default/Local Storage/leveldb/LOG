@@ -1,0 +1,6 @@
+2026/05/10-15:13:34.726 61040 Reusing MANIFEST D:\Programs\gift_track\chrome_data\Default\Local Storage\leveldb/MANIFEST-000001
+2026/05/10-15:13:34.745 61040 Recovering log #70
+2026/05/10-15:13:34.746 61040 Reusing old log D:\Programs\gift_track\chrome_data\Default\Local Storage\leveldb/000070.log 
+2026/05/10-15:14:34.760 61720 Level-0 table #74: started
+2026/05/10-15:14:34.769 61720 Level-0 table #74: 31441 bytes OK
+2026/05/10-15:14:34.772 61720 Delete type=0 #70

@@ -1,0 +1,18 @@
+2026/05/10-15:30:48.198 130c8 Reusing MANIFEST D:\Programs\gift_track\chrome-profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/05/10-15:30:48.202 130c8 Recovering log #11
+2026/05/10-15:30:48.203 130c8 Reusing old log D:\Programs\gift_track\chrome-profile\Default\Local Storage\leveldb/000011.log 
+2026/05/10-15:31:48.214 2ef4c Level-0 table #15: started
+2026/05/10-15:31:48.218 2ef4c Level-0 table #15: 31973 bytes OK
+2026/05/10-15:31:48.223 2ef4c Delete type=0 #11
+2026/05/10-15:32:49.492 2ef4c Level-0 table #17: started
+2026/05/10-15:32:49.499 2ef4c Level-0 table #17: 27575 bytes OK
+2026/05/10-15:32:49.502 2ef4c Delete type=0 #14
+2026/05/10-15:32:49.503 2ef4c Compacting 4@0 + 1@1 files
+2026/05/10-15:32:49.511 2ef4c Generated table #18@0: 38 keys, 72524 bytes
+2026/05/10-15:32:49.511 2ef4c Compacted 4@0 + 1@1 files => 72524 bytes
+2026/05/10-15:32:49.513 2ef4c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/10-15:32:49.515 2ef4c Delete type=2 #7
+2026/05/10-15:32:49.515 2ef4c Delete type=2 #9
+2026/05/10-15:32:49.515 2ef4c Delete type=2 #12
+2026/05/10-15:32:49.515 2ef4c Delete type=2 #15
+2026/05/10-15:32:49.515 2ef4c Delete type=2 #17
